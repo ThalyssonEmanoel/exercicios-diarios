@@ -1,12 +1,34 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { supabase } from './supabase'
 import { useTaskStore } from './stores/taskStore'
+import AuthModal from './components/AuthModal.vue'
 
 const taskStore = useTaskStore()
+const session = ref(null)
+
+// Variáveis reativas do App original
 const newTask = ref('')
 const editingId = ref(null)
 const editingText = ref('')
 
+onMounted(() => {
+  // Verifica sessão atual
+  supabase.auth.getSession().then(({ data }) => {
+    session.value = data.session
+  })
+
+  // Escuta mudanças na autenticação (login/logout)
+  supabase.auth.onAuthStateChange((_, _session) => {
+    session.value = _session
+  })
+})
+
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+}
+
+// ... (Mantenha as funções handleAddTask, startEditing, saveEdit, cancelEdit originais aqui)
 function handleAddTask() {
   taskStore.addTask(newTask.value)
   newTask.value = ''
@@ -30,7 +52,14 @@ function cancelEdit() {
 </script>
 
 <template>
-  <div class="container">
+  <AuthModal v-if="!session" />
+
+  <div v-else class="container">
+    <div class="header">
+      <h1>Minhas Tarefas</h1>
+      <button @click="handleLogout" class="logout-btn">Sair</button>
+    </div>
+
     <div class="add-task">
       <input 
         v-model="newTask" 
@@ -86,6 +115,28 @@ function cancelEdit() {
 </template>
 
 <style scoped>
+/* Adicione este estilo para o Header */
+.header {
+  max-width: 800px;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid #ff6b6b;
+  color: #ff6b6b;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-btn:hover { background: #ff6b6b; color: white; }
+
+/* ... (Mantenha o restante dos estilos originais do seu App.vue) */
 * {
   margin: 0;
   padding: 0;
