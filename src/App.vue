@@ -1,258 +1,91 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { supabase } from './supabase'
-import { useTaskStore } from './stores/taskStore'
-import AuthModal from './components/AuthModal.vue'
-
-const taskStore = useTaskStore()
-const session = ref(null)
-
-// Variáveis reativas do App original
-const newTask = ref('')
-const editingId = ref(null)
-const editingText = ref('')
-
-onMounted(() => {
-  // Verifica sessão atual
-  supabase.auth.getSession().then(({ data }) => {
-    session.value = data.session
-  })
-
-  // Escuta mudanças na autenticação (login/logout)
-  supabase.auth.onAuthStateChange((_, _session) => {
-    session.value = _session
-  })
-})
-
-const handleLogout = async () => {
-  await supabase.auth.signOut()
-}
-
-// ... (Mantenha as funções handleAddTask, startEditing, saveEdit, cancelEdit originais aqui)
-function handleAddTask() {
-  taskStore.addTask(newTask.value)
-  newTask.value = ''
-}
-
-function startEditing(task) {
-  editingId.value = task.id
-  editingText.value = task.text
-}
-
-function saveEdit(id) {
-  taskStore.editTask(id, editingText.value)
-  editingId.value = null
-  editingText.value = ''
-}
-
-function cancelEdit() {
-  editingId.value = null
-  editingText.value = ''
-}
-</script>
+<script src="./assets/script/App.js"></script>
 
 <template>
   <AuthModal v-if="!session" />
 
   <div v-else class="container">
     <div class="header">
-      <h1>Minhas Tarefas</h1>
+      <h1>Meus Treinos</h1>
       <button @click="handleLogout" class="logout-btn">Sair</button>
     </div>
 
-    <div class="add-task">
-      <input 
-        v-model="newTask" 
-        @keyup.enter="handleAddTask"
-        type="text" 
-        placeholder="Digite uma nova tarefa..."
-        class="task-input"
-      />
-      <button @click="handleAddTask" class="add-button">ADICIONAR</button>
+    <div class="add-task-form">
+      <div class="form-row">
+        <input 
+          v-model="newTask.nome" 
+          type="text" 
+          placeholder="Nome do treino" 
+          class="task-input"
+        />
+        <input 
+          v-model="newTask.tempo_medio" 
+          type="number" 
+          placeholder="Tempo (min)" 
+          class="task-input small-input"
+        />
+      </div>
+      <div class="form-row">
+        <input 
+          v-model="newTask.data_treino" 
+          type="date" 
+          class="task-input"
+        />
+        <input 
+          v-model="newTask.descricao" 
+          type="text" 
+          placeholder="Descrição (opcional)" 
+          class="task-input"
+        />
+      </div>
+      <button @click="handleAddTask" class="add-button">ADICIONAR TREINO</button>
     </div>
 
     <div class="task-list">
-      <div 
-        v-for="task in taskStore.tasks" 
-        :key="task.id" 
-        class="task-card"
-      >
-        <input 
-          type="checkbox" 
-          :checked="task.completed"
-          @change="taskStore.toggleTask(task.id)"
-          class="task-checkbox"
-        />
-        
-        <div 
-          v-if="editingId !== task.id"
-          @click="startEditing(task)"
-          class="task-text"
-          :class="{ completed: task.completed }"
-        >
-          {{ task.text }}
+      <div v-for="task in taskStore.tasks" :key="task.id" class="task-card">
+        <div v-if="editingId !== task.id" class="task-content">
+          <div class="task-header">
+            <div class="checkbox-wrapper">
+              <input 
+                type="checkbox" 
+                :checked="task.status === 'concluido'"
+                @change="taskStore.toggleTask(task.id, task.status)"
+                class="task-checkbox"
+              />
+            </div>
+            <div class="task-info">
+              <h3 :class="{ completed: task.status === 'concluido' }">{{ task.nome }}</h3>
+              <span class="task-meta">
+                {{ formatDate(task.data_treino) }} 
+                <span v-if="task.tempo_medio">• {{ task.tempo_medio }} min</span>
+              </span>
+              <p v-if="task.descricao" class="task-desc">{{ task.descricao }}</p>
+            </div>
+          </div>
+
+          <div class="task-actions">
+            <button @click="startEditing(task)" class="icon-btn edit" title="Editar">Editar</button>
+            <button @click="taskStore.deleteTask(task.id)" class="icon-btn delete" title="Excluir">Excluir</button>
+          </div>
         </div>
-        
-        <input 
-          v-else
-          v-model="editingText"
-          @keyup.enter="saveEdit(task.id)"
-          @keyup.esc="cancelEdit"
-          @blur="saveEdit(task.id)"
-          class="task-edit-input"
-          autofocus
-        />
-        
-        <button 
-          @click="taskStore.deleteTask(task.id)"
-          class="delete-button"
-        >
-          excluir
-        </button>
+
+        <div v-else class="edit-form">
+          <div class="form-row">
+            <input v-model="editingForm.nome" placeholder="Nome" class="edit-input" />
+            <input v-model="editingForm.tempo_medio" type="number" placeholder="Min" class="edit-input small-input" />
+          </div>
+          <div class="form-row">
+            <input v-model="editingForm.data_treino" type="date" class="edit-input" />
+            <input v-model="editingForm.descricao" placeholder="Descrição" class="edit-input" />
+          </div>
+          <div class="edit-actions">
+            <button @click="saveEdit(task.id)" class="save-btn">Salvar</button>
+            <button @click="cancelEdit" class="cancel-btn">Cancelar</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-/* Adicione este estilo para o Header */
-.header {
-  max-width: 800px;
-  margin: 0 auto 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #fff;
-}
-
-.logout-btn {
-  background: transparent;
-  border: 1px solid #ff6b6b;
-  color: #ff6b6b;
-  padding: 5px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.logout-btn:hover { background: #ff6b6b; color: white; }
-
-/* ... (Mantenha o restante dos estilos originais do seu App.vue) */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.container {
-  min-height: 100vh;
-  padding: 40px 20px;
-}
-
-.add-task {
-  max-width: 800px;
-  margin: 0 auto 30px;
-  display: flex;
-  gap: 10px;
-}
-
-.task-input {
-  flex: 1;
-  padding: 15px 20px;
-  background-color: #2a2d3a;
-  border: 1px solid #3a3d4a;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 16px;
-  outline: none;
-}
-
-.task-input::placeholder {
-  color: #6a6d7a;
-}
-
-.task-input:focus {
-  border-color: #4a9d5f;
-}
-
-.add-button {
-  padding: 15px 30px;
-  background-color: #4a9d5f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.add-button:hover {
-  background-color: #3d8a4f;
-}
-
-.task-list {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.task-card {
-  background-color: #c5c5c5;
-  padding: 15px 20px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  transition: transform 0.2s;
-}
-
-.task-card:hover {
-  transform: translateX(5px);
-}
-
-.task-checkbox {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #4a9d5f;
-}
-
-.task-text {
-  flex: 1;
-  color: #1a1d29;
-  font-size: 16px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.task-text.completed {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.task-edit-input {
-  flex: 1;
-  padding: 8px 12px;
-  background-color: white;
-  border: 2px solid #4a9d5f;
-  border-radius: 4px;
-  color: #1a1d29;
-  font-size: 16px;
-  outline: none;
-}
-
-.delete-button {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 5px 10px;
-  transition: transform 0.2s;
-}
-
-.delete-button:hover {
-  transform: scale(1.2);
-}
-</style>
+<style scoped src="./assets/css/App.css"></style>
