@@ -46,6 +46,17 @@ export default {
       }
     }
 
+    const handleGithubLogin = async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+        })
+        if (error) throw error
+      } catch (error) {
+        errorMessage.value = error.message
+      }
+    }
+
     return {
       loading,
       email,
@@ -53,7 +64,8 @@ export default {
       isSignUp,
       errorMessage,
       handleAuth,
-      handleGoogleLogin
+      handleGoogleLogin,
+      handleGithubLogin
     }
   }
 }

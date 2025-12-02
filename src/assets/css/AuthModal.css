@@ -9,6 +9,7 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  font-family: "Comic Relief", system-ui;
 }
 
 .auth-modal {
@@ -30,16 +31,16 @@
 
 .auth-input {
   padding: 12px;
-  background: #1a1d29;
+  background: #ffffff;
   border: 1px solid white;
   border-radius: 4px;
-  color: white;
+  color: rgb(0, 0, 0);
   outline: none;
 }
 
 .auth-input:focus { border-color: #4a9d5f; }
 
-.primary-btn, .google-btn {
+.primary-btn, .google-btn, .github-btn {
   width: 100%;
   padding: 12px;
   border: none;
@@ -61,7 +62,13 @@
   margin-top: 10px;
 }
 
-.primary-btn:hover, .google-btn:hover { opacity: 0.9; }
+.github-btn {
+  background-color: #24292e;
+  color: white;
+  margin-top: 10px;
+}
+
+.primary-btn:hover, .google-btn:hover, .github-btn:hover { opacity: 0.9; }
 
 .divider { margin: 15px 0; color: white; font-size: 0.9rem; }
 
@@ -83,4 +90,53 @@
   color: #ff6b6b;
   margin-bottom: 15px;
   font-size: 0.9rem;
+}
+
+@media screen and (max-width: 480px) {
+  .auth-modal {
+    width: 78%;
+    padding: 15px;
+  }
+
+   .google-btn {
+     background-color: white;
+     color: #333;
+     margin-top: -2px;
+     width: 80%;
+   }
+   
+   .github-btn {
+     background-color: #626c75;
+     color: white;
+     margin-top: 10px;
+     width: 80%;
+   }
+
+   .primary-btn {
+    background-color: #4a9d5f;
+    color: white;
+    width: 80%;
+    }
+
+    .auth-input {
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid white;
+    border-radius: 4px;
+    color: rgb(0, 0, 0);
+    outline: none;
+    width: 70%;
+    margin-left: 31px;
+    }
+
+  .toggle-text {
+    margin-right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 70px;
+  }
+
+  .toggle-text span {
+    margin-left: 0;
+  }
 }

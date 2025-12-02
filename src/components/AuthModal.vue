@@ -33,6 +33,10 @@
         Continuar com Google
       </button>
 
+      <button @click="handleGithubLogin" class="github-btn">
+        Continuar com GitHub
+      </button>
+
       <p class="toggle-text">
         {{ isSignUp ? 'Já tem uma conta?' : 'Não tem conta?' }}
         <span @click="isSignUp = !isSignUp">
